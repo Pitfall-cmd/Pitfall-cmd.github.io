@@ -1,0 +1,1370 @@
+<!--
+================================================================================
+  叶炳龙 · 个人主页  v3  —  暖红帷幕版
+  Design Direction: 原研哉「白」× 暖红 × 层次底色 × 动态入场
+================================================================================
+
+  设计师视角来源
+  --------------
+  以原研哉「白」的方法论为骨架，注入朱砂暖红调色板。
+  v3 优化：
+  1. 横向拉宽（max-w 1440px），内容不再挤在中间窄条
+  2. 导航字体调大至 14px，更清晰可点
+  3. 五个区段各不同底色：翻阅不同质感纸页的隐喻
+  4. v4 时间线照片扇出方向终正：左栏（奇数）→ 向右扇，右栏（偶数）→ 向左扇，底片 z-index 最高始终可见
+  5. 开幕暖红帷幕滑开 + 全区块跳脱交错入场动画
+  6. 照片堆 hover 增加弹性缓动，更像翻开实体相册
+
+  Implemented: 2026-06-30  v3
+================================================================================
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>叶炳龙 — 个人主页</title>
+<link rel="preconnect" href="https://fonts.googleapis.cn">
+<link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+<link href="https://fonts.googleapis.cn/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Noto+Serif+SC:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Tokens · 暖红五层纸色谱
+   ============================================================ */
+:root {
+  --paper:       #FCFAF8;
+  --paper-warm:  #FAF5F1;
+  --paper-earth: #F7F0EB;
+  --paper-deep:  #F2E9E2;
+  --paper-closing:#EDE0D7;
+  --ink:         #1C1512;
+  --ink-2:       #5C4237;
+  --ink-3:       #9A8375;
+  --rule:        #E0D2C5;
+  --warm-red:    #B24E3A;
+  --warm-terra:  #C96B55;
+  --warm-blush:  #E8C8B8;
+  --warm-deep:   #8B3A2D;
+
+  --serif-en:    'Cormorant Garamond','Times New Roman',serif;
+  --serif-cn:    'Noto Serif SC','Songti SC','STSong',serif;
+  --mono:        'JetBrains Mono','SF Mono',Menlo,monospace;
+
+  --gutter:      clamp(28px, 6vw, 96px);
+  --max-w:       1440px;
+  --t-quick:     .25s cubic-bezier(.2,.6,.2,1);
+  --t-soft:      .55s cubic-bezier(.2,.7,.2,1);
+  --t-bounce:    .65s cubic-bezier(.22,.8,.26,1.15);
+  --t-elastic:   .75s cubic-bezier(.25,.85,.3,1.25);
+}
+
+/* ============================================================
+   Entrance Curtain
+   ============================================================ */
+.curtain {
+  position: fixed; inset: 0;
+  z-index: 10000;
+  background: var(--warm-deep);
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  transform: translateY(0);
+  transition: transform .9s cubic-bezier(.72,.01,.18,1);
+}
+.curtain.raised { transform: translateY(-105vh); }
+.curtain-inner {
+  text-align: center;
+  color: var(--paper);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: all .55s .15s cubic-bezier(.2,.7,.2,1);
+}
+.curtain.show-text .curtain-inner { opacity: 1; transform: translateY(0); }
+.curtain.fade-text .curtain-inner { opacity: 0; transform: translateY(-14px); transition: all .35s ease; }
+.curtain-name {
+  font-family: var(--serif-cn);
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: .18em;
+  margin: 0 0 10px;
+}
+.curtain-sub {
+  font-family: var(--serif-en);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: .12em;
+  opacity: .7;
+}
+.curtain-line {
+  width: 60px; height: 1px;
+  background: rgba(252,250,248,.35);
+  margin: 20px auto;
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif-cn);
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+img { display:block; max-width:100%; height:auto; }
+a  { color:inherit; text-decoration:none; }
+::selection { background:var(--warm-red); color:var(--paper); }
+
+/* 纸感噪点（比 v2 更淡） */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.025 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: .45; mix-blend-mode: multiply; z-index:0;
+}
+main { position:relative; z-index:1; }
+
+/* ============================================================
+   Typography
+   ============================================================ */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.display {
+  font-family: var(--serif-en);
+  font-weight: 300;
+  letter-spacing: -.01em;
+}
+
+/* ============================================================
+   Top Rail — 字体加大、更高
+   ============================================================ */
+.top-rail {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(252,250,248,.84);
+  backdrop-filter: saturate(110%) blur(10px);
+  -webkit-backdrop-filter: saturate(110%) blur(10px);
+  border-bottom: 1px solid var(--rule);
+}
+.top-rail-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 18px var(--gutter);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 32px;
+}
+.brand {
+  font-family: var(--serif-cn);
+  font-size: 17px;
+  letter-spacing: .18em;
+  color: var(--ink);
+}
+.brand b { font-weight:600; color:var(--warm-red); }
+.nav {
+  display: flex;
+  gap: 40px;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.nav a { transition: color var(--t-quick); cursor:pointer; }
+.nav a:hover { color: var(--warm-red); }
+.nav a .num { color: var(--ink-3); margin-right: 8px; font-size: 12px; }
+
+/* ============================================================
+   Section base + 五层底色
+   ============================================================ */
+section { padding: clamp(100px, 13vh, 180px) 0; }
+.container { max-width: var(--max-w); margin:0 auto; padding:0 var(--gutter); }
+
+/* 各 section 的底色 */
+#about    { background: var(--paper-warm); }
+#works    { background: var(--paper); }
+#timeline { background: var(--paper-earth); }
+#contact  { background: var(--paper-deep); }
+
+.section-head {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: clamp(24px, 5vw, 72px);
+  align-items: baseline;
+  margin-bottom: clamp(56px, 8vw, 100px);
+}
+.section-head h2 {
+  font-family: var(--serif-en);
+  font-weight: 300;
+  font-size: clamp(50px, 6vw, 78px);
+  line-height: 1.0;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+.section-head h2 em {
+  font-style: italic;
+  color: var(--warm-terra);
+}
+.section-head .meta {
+  font-family: var(--serif-cn);
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 2.0;
+  max-width: 38em;
+}
+hr.hair {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+}
+
+/* ============================================================
+   Entrance Animation — 全区块交错入场
+   ============================================================ */
+.anim-item {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.anim-item.visible {
+  animation: revealUp .85s cubic-bezier(.16,.76,.25,1.04) forwards;
+}
+@keyframes revealUp {
+  from { opacity:0; transform:translateY(38px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.anim-item.visible.anim-delay-1 { animation-delay: .08s; }
+.anim-item.visible.anim-delay-2 { animation-delay: .18s; }
+.anim-item.visible.anim-delay-3 { animation-delay: .28s; }
+.anim-item.visible.anim-delay-4 { animation-delay: .38s; }
+.anim-item.visible.anim-delay-5 { animation-delay: .48s; }
+
+/* 区段标题从左侧滑入 + 暖色光晕闪过 */
+.anim-head {
+  opacity: 0; transform: translateX(-30px);
+  transition: all .85s cubic-bezier(.16,.76,.25,1.04);
+}
+.anim-head.visible {
+  opacity: 1; transform: translateX(0);
+}
+
+/* works 卡弹性入场 */
+.anim-card {
+  opacity:0; transform: translateY(32px) scale(.96);
+  transition: all .7s cubic-bezier(.22,.8,.26,1.15);
+}
+.anim-card.visible { opacity:1; transform: translateY(0) scale(1); }
+
+/* Timeline 项从交替方向滑入 */
+.anim-timeline {
+  opacity:0; transform: translateY(50px);
+  transition: all .9s cubic-bezier(.16,.76,.25,1.04);
+}
+.anim-timeline.visible { opacity:1; transform: translateY(0); }
+
+/* 照片堆 hover 加了弹性 scale
+   规则：
+   - 左栏（奇数项）→ 照片向**右**扇出（不压文字）
+   - 右栏（偶数项）→ 照片向**左**扇出（不压文字）
+   - 底片（data-i=0，有真实照片）z-index 最高，始终在最上面可见 */
+@keyframes cardFanRight0 { to { transform:translate(120px, 22px)  rotate(14deg);  z-index:9; } }
+@keyframes cardFanRight1 { to { transform:translate(200px, 6px)   rotate(7deg);   z-index:8; } }
+@keyframes cardFanRight2 { to { transform:translate(270px,-4px)   rotate(1deg);   z-index:7; } }
+@keyframes cardFanRight3 { to { transform:translate(340px, 10px)  rotate(-6deg);  z-index:6; } }
+@keyframes cardFanRight4 { to { transform:translate(410px, 30px)  rotate(-14deg); z-index:5; } }
+
+@keyframes cardFanLeft0  { to { transform:translate(-120px, 22px) rotate(-14deg); z-index:9; } }
+@keyframes cardFanLeft1  { to { transform:translate(-200px, 6px)  rotate(-7deg);  z-index:8; } }
+@keyframes cardFanLeft2  { to { transform:translate(-270px,-4px)  rotate(-1deg);  z-index:7; } }
+@keyframes cardFanLeft3  { to { transform:translate(-340px, 10px) rotate(6deg);   z-index:6; } }
+@keyframes cardFanLeft4  { to { transform:translate(-410px, 30px) rotate(14deg);  z-index:5; } }
+
+/* ============================================================
+   HERO — 更大幅面
+   ============================================================ */
+.hero {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  padding: clamp(70px, 10vh, 130px) 0;
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -140px; right: -120px;
+  width: 700px; height: 700px;
+  background: radial-gradient(ellipse at 40% 30%, var(--warm-blush) 0%, transparent 70%);
+  opacity: .32; pointer-events: none; z-index: -1;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  bottom: -100px; left: -140px;
+  width: 540px; height: 540px;
+  background: radial-gradient(ellipse at 60% 50%, var(--warm-blush) 0%, transparent 70%);
+  opacity: .22; pointer-events: none; z-index: -1;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: clamp(48px, 8vw, 130px);
+  align-items: center;
+  position: relative; z-index:1;
+}
+.hero-left .eyebrow { margin-bottom:48px; display:block; }
+.hero-name-cn {
+  font-family: var(--serif-cn);
+  font-weight:400;
+  font-size: clamp(68px, 10vw, 150px);
+  line-height:1.0;
+  letter-spacing:.08em;
+  color:var(--ink);
+}
+.hero-name-cn .last { color:var(--warm-red); }
+.hero-name-en {
+  font-family: var(--serif-en);
+  font-weight:300; font-style:italic;
+  font-size: clamp(20px, 1.8vw, 26px);
+  color: var(--ink-2);
+  letter-spacing:.05em;
+  margin: 6px 0 56px 0;
+}
+.hero-quote {
+  font-family: var(--serif-cn);
+  font-weight:300;
+  font-size: 18px;
+  line-height:2.15;
+  color:var(--ink);
+  max-width:34em;
+  padding-left:28px;
+  border-left: 1px solid var(--warm-terra);
+  margin-bottom: 56px;
+}
+.hero-quote .lead {
+  font-family: var(--serif-en);
+  font-style:italic;
+  font-size: 24px;
+  color: var(--warm-red);
+  display:block;
+  margin-bottom: 16px;
+  letter-spacing:.03em;
+}
+.hero-credentials {
+  display: flex;
+  gap: 60px;
+  padding-top: 30px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing:.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hero-credentials span b {
+  display:block;
+  font-family: var(--serif-cn);
+  font-weight:500;
+  font-size:15px;
+  letter-spacing:.12em;
+  color:var(--ink);
+  margin-top:6px;
+  text-transform:none;
+}
+.hero-right {
+  position:relative;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+}
+.hero-photo-frame {
+  position:relative;
+  width:100%;
+  max-width:480px;
+}
+.hero-photo-frame::before {
+  content:"";
+  position:absolute;
+  top:32px; left:32px;
+  width:100%; height:100%;
+  background:var(--warm-red);
+  opacity:.07;
+  z-index:0;
+}
+.hero-photo {
+  position:relative; z-index:1;
+  width:100%;
+  aspect-ratio:3/4;
+  object-fit:cover;
+  background:var(--paper-2, #F6EFEA);
+  box-shadow:
+    0 2px 0 var(--rule),
+    0 50px 80px -50px rgba(60,25,15,.28);
+}
+.hero-caption {
+  position:absolute;
+  bottom:-38px; left:32px;
+  font-family: var(--mono);
+  font-size:11px;
+  letter-spacing:.25em;
+  color:var(--ink-3);
+  z-index:2;
+  display:flex; gap:28px;
+}
+
+/* ============================================================
+   ABOUT
+   ============================================================ */
+.about-body {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: clamp(44px, 8vw, 120px);
+  align-items: start;
+}
+.about-text {
+  font-family: var(--serif-cn);
+  font-size: 17px;
+  line-height: 2.2;
+  color: var(--ink);
+}
+.about-text p { margin-bottom: 30px; }
+.about-text .first-glyph {
+  font-family: var(--serif-en);
+  font-style:italic;
+  font-size:44px;
+  float:left;
+  line-height:.88;
+  padding:4px 16px 0 0;
+  color:var(--warm-red);
+}
+.about-facts { border-top:1px solid var(--rule); }
+.about-fact {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
+}
+.about-fact .k {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing:.22em;
+  text-transform: uppercase;
+  color: var(--warm-terra);
+}
+.about-fact .v {
+  font-family: var(--serif-cn);
+  font-size: 16px;
+  color: var(--ink);
+  line-height: 1.75;
+}
+.about-fact .v small {
+  display:block;
+  font-family: var(--serif-cn);
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   WORKS — 卡片网格
+   ============================================================ */
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: clamp(28px, 3.5vw, 44px);
+}
+.work-card {
+  position:relative;
+  padding: 40px 36px;
+  background: var(--paper-warm);
+  transition: background var(--t-quick), transform var(--t-soft), box-shadow var(--t-soft);
+  cursor: default;
+}
+.work-card:hover {
+  background: var(--paper-earth);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px -20px rgba(60,25,15,.12);
+}
+.work-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--warm-red);
+  opacity: 0;
+  transition: opacity var(--t-quick);
+}
+.work-card:hover::before { opacity: 1; }
+.work-card .wk-cat {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing:.28em;
+  text-transform: uppercase;
+  color: var(--warm-terra);
+  margin-bottom: 16px;
+}
+.work-card h3 {
+  font-family: var(--serif-cn);
+  font-weight:500;
+  font-size:22px;
+  letter-spacing:.04em;
+  margin: 0 0 14px 0;
+  color: var(--ink);
+}
+.work-card p {
+  font-family: var(--serif-cn);
+  font-size: 15px;
+  line-height:1.9;
+  color: var(--ink-2);
+  max-width:30em;
+}
+.work-card .wk-meta {
+  margin-top:22px;
+  font-family: var(--mono);
+  font-size:10px;
+  letter-spacing:.18em;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   TIMELINE — 重构：照片扇出不压文字
+   ============================================================ */
+.timeline { position:relative; }
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: var(--rule);
+  transform: translateX(-.5px);
+}
+
+.t-item {
+  position:relative;
+  display:grid;
+  grid-template-columns: 1fr 60px 1fr;
+  gap:0;
+  margin-bottom: clamp(100px, 14vw, 180px);
+}
+.t-item:last-child { margin-bottom:0; }
+
+.t-marker {
+  grid-column:2;
+  display:flex;
+  justify-content:center;
+  padding-top:20px;
+}
+.t-marker span {
+  width:10px; height:10px;
+  border-radius:50%;
+  background:var(--paper);
+  border:1.5px solid var(--ink-3);
+  transition: all var(--t-bounce);
+}
+.t-item:hover .t-marker span,
+.t-item:focus-within .t-marker span {
+  background: var(--warm-red);
+  border-color: var(--warm-red);
+  transform: scale(1.4);
+}
+
+.t-content {
+  grid-column:1;
+  padding-right: 64px;
+  text-align:right;
+  padding-top: 6px;
+}
+/* 偶数项：文字在右侧 */
+.t-item:nth-child(even) .t-content {
+  grid-column:3;
+  padding-right:0;
+  padding-left:64px;
+  text-align:left;
+}
+
+.t-year {
+  font-family: var(--serif-en);
+  font-weight:300;
+  font-size: clamp(52px, 5.5vw, 72px);
+  line-height:1;
+  color:var(--ink);
+  letter-spacing:-.02em;
+  margin:0 0 8px 0;
+}
+.t-year .suffix {
+  font-size:.32em;
+  font-family: var(--mono);
+  color: var(--warm-terra);
+  letter-spacing:.15em;
+  margin-left:.6em;
+}
+.t-stage {
+  font-family: var(--serif-cn);
+  font-weight:500;
+  font-size:20px;
+  color:var(--ink);
+  margin:0 0 16px 0;
+  letter-spacing:.05em;
+}
+.t-desc {
+  font-family: var(--serif-cn);
+  font-size:15px;
+  line-height:2.0;
+  color:var(--ink-2);
+  max-width:30em;
+  margin-left:auto;
+}
+.t-item:nth-child(even) .t-desc { margin-left:0; margin-right:auto; }
+
+/* —— 照片堆 —— */
+.t-stack {
+  margin-top: 32px;
+  display: inline-block;
+  position: relative;
+  width: 180px;
+  height: 135px;
+  perspective: 1200px;
+}
+.t-card {
+  position: absolute;
+  inset: 0;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  box-shadow: 0 1px 0 var(--rule);
+  transform-origin: 50% 60%;
+  transition:
+    transform .6s cubic-bezier(.22,.82,.26,1.16),
+    box-shadow .4s ease;
+  will-change: transform;
+  overflow: hidden;
+}
+.t-card img {
+  width:100%; height:100%;
+  object-fit:cover;
+  filter: saturate(.94) contrast(.97);
+}
+.t-card.placeholder {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:12px;
+  font-family: var(--serif-cn);
+  font-size:12px;
+  color:var(--ink-3);
+  letter-spacing:.12em;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      var(--paper-warm) 0 8px,
+      var(--paper-earth) 8px 16px
+    );
+}
+.t-card.placeholder::before {
+  content:"";
+  position:absolute;
+  top:6px; left:6px;
+  width:18px; height:18px;
+  border:1px solid var(--ink-3);
+  opacity:.35;
+}
+.t-card.placeholder .ph-label {
+  position:relative;
+  background:var(--paper);
+  padding:4px 8px;
+  border:1px solid var(--rule);
+  line-height:1.5;
+}
+
+/* Stack 静止态 */
+.t-card[data-i="0"] { transform:translate(0,0)       rotate(0deg);  z-index:4; }
+.t-card[data-i="1"] { transform:translate(6px,5px)   rotate(2deg);  z-index:3; }
+.t-card[data-i="2"] { transform:translate(12px,10px) rotate(4deg);  z-index:2; }
+.t-card[data-i="3"] { transform:translate(18px,15px) rotate(6deg);  z-index:1; }
+.t-card[data-i="4"] { transform:translate(24px,20px) rotate(8deg);  z-index:0; opacity:.9; }
+
+/* —— 🔑 关键：左栏向左扇、右栏向右扇，绝不压文字 —— */
+
+/* 左栏（奇数项，文字在左）→ 照片向**右**扇出，不压文字 */
+.t-item:nth-child(odd) .t-stack:hover .t-card,
+.t-item:nth-child(odd) .t-stack:focus-within .t-card {
+  box-shadow: 0 8px 22px -12px rgba(60,25,15,.3);
+}
+.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="0"],
+.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="0"] {
+  animation: cardFanRight0 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="1"],
+.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="1"] {
+  animation: cardFanRight1 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="2"],
+.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="2"] {
+  animation: cardFanRight2 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="3"],
+.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="3"] {
+  animation: cardFanRight3 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="4"],
+.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="4"] {
+  animation: cardFanRight4 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+
+/* 右栏（偶数项，文字在右）→ 照片向**左**扇出，不压文字 */
+.t-item:nth-child(even) .t-stack:hover .t-card,
+.t-item:nth-child(even) .t-stack:focus-within .t-card {
+  box-shadow: 0 8px 22px -12px rgba(60,25,15,.3);
+}
+.t-item:nth-child(even) .t-stack:hover .t-card[data-i="0"],
+.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="0"] {
+  animation: cardFanLeft0 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(even) .t-stack:hover .t-card[data-i="1"],
+.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="1"] {
+  animation: cardFanLeft1 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(even) .t-stack:hover .t-card[data-i="2"],
+.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="2"] {
+  animation: cardFanLeft2 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(even) .t-stack:hover .t-card[data-i="3"],
+.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="3"] {
+  animation: cardFanLeft3 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+.t-item:nth-child(even) .t-stack:hover .t-card[data-i="4"],
+.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="4"] {
+  animation: cardFanLeft4 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+}
+
+/* 触屏展开：同样方向规则 — 左栏向右、右栏向左 */
+.t-stack.is-open .t-card { box-shadow: 0 8px 22px -12px rgba(60,25,15,.3); }
+.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="0"] { animation: cardFanRight0 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="1"] { animation: cardFanRight1 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="2"] { animation: cardFanRight2 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="3"] { animation: cardFanRight3 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="4"] { animation: cardFanRight4 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="0"] { animation: cardFanLeft0 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="1"] { animation: cardFanLeft1 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="2"] { animation: cardFanLeft2 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="3"] { animation: cardFanLeft3 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="4"] { animation: cardFanLeft4 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
+
+.t-stack-meta {
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing:.22em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   CONTACT
+   ============================================================ */
+.contact { text-align:center; }
+.contact .eyebrow { display:block; margin-bottom:44px; }
+.contact h2 {
+  font-family: var(--serif-cn);
+  font-weight:300;
+  font-size: clamp(44px, 5.5vw, 70px);
+  line-height:1.2;
+  letter-spacing:.05em;
+  margin: 0 0 36px 0;
+}
+.contact h2 em {
+  font-family: var(--serif-en);
+  font-style:italic;
+  color: var(--warm-terra);
+}
+.contact .closing {
+  font-family: var(--serif-cn);
+  font-size: 16px;
+  line-height:2.2;
+  color: var(--ink-2);
+  max-width:38em;
+  margin: 0 auto 72px;
+}
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  max-width: 760px;
+  margin: 0 auto;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+.contact-cell {
+  padding: 40px 28px;
+  border-right: 1px solid var(--rule);
+  transition: background var(--t-quick);
+}
+.contact-cell:hover { background: var(--paper-warm); }
+.contact-cell:last-child { border-right: 0; }
+.contact-cell .k {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing:.28em;
+  text-transform: uppercase;
+  color: var(--warm-terra);
+  margin-bottom: 14px;
+}
+.contact-cell .v {
+  font-family: var(--serif-cn);
+  font-size: 17px;
+  color: var(--ink);
+  letter-spacing:.05em;
+}
+.contact-cell .v .placeholder {
+  color: var(--ink-3);
+  font-style: normal;
+}
+.contact-cell .note {
+  font-family: var(--serif-cn);
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 10px;
+  line-height:1.6;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer {
+  padding: 64px 0 44px;
+  background: var(--paper-closing);
+}
+.footer-inner {
+  max-width: var(--max-w);
+  margin:0 auto;
+  padding: 0 var(--gutter);
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:24px;
+  font-family: var(--mono);
+  font-size:11px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color: var(--ink-3);
+}
+.footer-inner b { color:var(--warm-red); font-weight:400; }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 960px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 64px; }
+  .hero-right { justify-content: flex-start; }
+  .hero-photo-frame { max-width: 360px; }
+  .about-body { grid-template-columns: 1fr; }
+  .works-grid { grid-template-columns: 1fr; }
+  .nav { display: none; }
+  .section-head { grid-template-columns: 1fr; gap: 16px; }
+  .contact-grid { grid-template-columns: 1fr; }
+  .contact-cell { border-right:0; border-bottom:1px solid var(--rule); }
+  .contact-cell:last-child { border-bottom:0; }
+
+  /* 移动端时间线：单列 + 照片扇出往右 */
+  .timeline::before { left: 18px; }
+  .t-item { grid-template-columns: 36px 1fr; }
+  .t-marker { grid-column:1; padding-left:10px; justify-content:flex-start; }
+  .t-content,
+  .t-item:nth-child(even) .t-content {
+    grid-column:2;
+    text-align:left;
+    padding: 0 0 0 24px;
+  }
+  .t-desc,
+  .t-item:nth-child(even) .t-desc { margin-left:0; margin-right:0; }
+
+  /* 移动端全部向右扇（单列布局，照片在文字下方） */
+  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="0"],
+  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="0"],
+  .t-stack:hover .t-card[data-i="0"],
+  .t-stack:focus-within .t-card[data-i="0"] {
+    animation: cardFanRight0 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+  }
+  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="1"],
+  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="1"],
+  .t-stack:hover .t-card[data-i="1"],
+  .t-stack:focus-within .t-card[data-i="1"] {
+    animation: cardFanRight1 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+  }
+  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="2"],
+  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="2"],
+  .t-stack:hover .t-card[data-i="2"],
+  .t-stack:focus-within .t-card[data-i="2"] {
+    animation: cardFanRight2 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+  }
+  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="3"],
+  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="3"],
+  .t-stack:hover .t-card[data-i="3"],
+  .t-stack:focus-within .t-card[data-i="3"] {
+    animation: cardFanRight3 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+  }
+  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="4"],
+  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="4"],
+  .t-stack:hover .t-card[data-i="4"],
+  .t-stack:focus-within .t-card[data-i="4"] {
+    animation: cardFanRight4 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+  }
+
+  .t-stack { width:150px; height:112px; }
+  .footer-inner { flex-direction:column; gap:12px; }
+}
+@media (max-width: 520px) {
+  .hero-credentials { flex-direction:column; gap:22px; }
+  .hero-name-cn { font-size:56px; }
+  .hero-quote { padding-left:20px; }
+  .t-stack { width:130px; height:98px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { transition:none!important; animation:none!important; }
+  .curtain { display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     ENTRANCE CURTAIN — 暖红帷幕开场
+     ============================================================ -->
+<div class="curtain" id="curtain">
+  <div class="curtain-inner">
+    <div class="curtain-name">叶炳龙</div>
+    <div class="curtain-line"></div>
+    <div class="curtain-sub">YE BINGLONG  ·  A Personal Index</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOP RAIL
+     ============================================================ -->
+<header class="top-rail anim-item" data-anim>
+  <div class="top-rail-inner">
+    <div class="brand">叶<b>炳龙</b> &nbsp;<span style="color:var(--ink-3);font-family:var(--mono);font-size:12px;letter-spacing:.18em;">YE BINGLONG</span></div>
+    <nav class="nav">
+      <a href="#about"><span class="num">01</span>About</a>
+      <a href="#works"><span class="num">02</span>Works</a>
+      <a href="#timeline"><span class="num">03</span>Timeline</a>
+      <a href="#contact"><span class="num">04</span>Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <span class="eyebrow anim-item" data-anim>A Personal Index  ·  个人图录</span>
+        <h1 class="hero-name-cn anim-item anim-delay-1" data-anim>叶<span class="last">炳龙</span></h1>
+        <div class="hero-name-en anim-item anim-delay-2" data-anim>Ye Binglong  ／  Jinhua, Zhejiang</div>
+        <p class="hero-quote anim-item anim-delay-3" data-anim>
+          <span class="lead">An engineer within the system.</span>
+          在中国人民银行金华市分行科技科工作，做金融科技与信息化建设。
+          写代码，也写字；规律健身，认真生活。
+        </p>
+        <div class="hero-credentials anim-item anim-delay-4" data-anim>
+          <span>所在机构<b>中国人民银行<br/>金华市分行</b></span>
+          <span>所在部门<b>科技科</b></span>
+          <span>主要方向<b>金融科技<br/>信息化建设</b></span>
+        </div>
+      </div>
+      <div class="hero-right anim-item anim-delay-3" data-anim>
+        <figure class="hero-photo-frame">
+          <img class="hero-photo" src="assets/photos/photo-3.jpg" alt="白衬衫职业照" />
+          <figcaption class="hero-caption">
+            <span>PLATE / 001</span>
+            <span>金华 · 2026</span>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hair" />
+
+<!-- ============================================================
+     ABOUT
+     ============================================================ -->
+<section id="about">
+  <div class="container">
+    <div class="section-head anim-head" data-anim-head>
+      <h2><em>01</em><br/>关于我</h2>
+      <p class="meta">
+        一个在体制内做技术的普通人。<br/>
+        相信稳定也是一种力量，长期主义比短期耀眼更可靠。
+      </p>
+    </div>
+    <div class="about-body">
+      <div class="about-text anim-item" data-anim>
+        <p>
+          <span class="first-glyph">我</span>是叶炳龙，坐标浙江金华。
+          日常在中国人民银行金华市分行科技科工作，参与本地金融科技系统的
+          建设、维护与数据治理；偶尔写一些内部的小工具，让流程更顺一点。
+        </p>
+        <p>
+          体制内的工作节奏不快，但要求稳定、可解释、可追溯。
+          我喜欢这种克制 —— 它让人把精力放在真正重要的事情上：
+          把一件事做扎实，把一个家庭照顾好，把自己的身体管理好。
+        </p>
+        <p>
+          工作之外，健身是坚持得最久的事。2017 年开始系统训练，
+          至今已是我生活里像呼吸一样自然的节奏。
+          2024 年，我和爱人完成了人生里那件最重要的小事。
+          ——这一页，是我整理出来的、关于自己的一份图录。
+        </p>
+      </div>
+      <aside class="about-facts anim-item anim-delay-2" data-anim>
+        <div class="about-fact">
+          <div class="k">BASE</div>
+          <div class="v">浙江 · 金华<small>Jinhua, Zhejiang</small></div>
+        </div>
+        <div class="about-fact">
+          <div class="k">FIELD</div>
+          <div class="v">金融科技 / 信息化建设<small>FinTech &amp; Information Systems</small></div>
+        </div>
+        <div class="about-fact">
+          <div class="k">ORGN</div>
+          <div class="v">中国人民银行金华市分行 · 科技科<small>PBoC Jinhua Branch, IT Division</small></div>
+        </div>
+        <div class="about-fact">
+          <div class="k">FOCUS</div>
+          <div class="v">系统稳定性 / 数据治理 / 内部工具<small>Stability · Data · Internal Tooling</small></div>
+        </div>
+        <div class="about-fact">
+          <div class="k">LIFE</div>
+          <div class="v">健身 · 家庭 · 读书<small>Fitness · Family · Reading</small></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<hr class="hair" />
+
+<!-- ============================================================
+     WORKS — 所做之事
+     ============================================================ -->
+<section id="works">
+  <div class="container">
+    <div class="section-head anim-head" data-anim-head>
+      <h2><em>02</em><br/>所做之事</h2>
+      <p class="meta">
+        在科技科的日常里，写过一些东西、搭过一些系统。<br/>
+        不算惊天动地，但一砖一瓦都是自己垒的。
+      </p>
+    </div>
+    <div class="works-grid">
+      <div class="work-card anim-card" data-anim-card>
+        <div class="wk-cat">Internal Tool  ·  内部工具</div>
+        <h3>数据报表自动化系统</h3>
+        <p>
+          为分行日常数据报送搭建了一套半自动化的报表生成与校验流程，
+          把原来需要人工 Excel 反复核对的工作量压缩到了十几分钟。
+        </p>
+        <div class="wk-meta">Python · SQL · Excel 自动化 ／ 2020–至今维护</div>
+      </div>
+      <div class="work-card anim-card anim-delay-1" data-anim-card>
+        <div class="wk-cat">System Maintenance  ·  系统运维</div>
+        <h3>本地金融业务系统运维</h3>
+        <p>
+          负责分行多套业务系统的日常维护、故障排查、版本升级。
+          建立了一套故障响应与回滚 SOP，被兄弟科室参考沿用。
+        </p>
+        <div class="wk-meta">Linux · 数据库 · Shell 脚本 ／ 2018–至今</div>
+      </div>
+      <div class="work-card anim-card anim-delay-2" data-anim-card>
+        <div class="wk-cat">Data Governance  ·  数据治理</div>
+        <h3>业务数据质量治理专项</h3>
+        <p>
+          牵头对分行近三年业务数据进行盘点、清洗和标准化，建立了
+          数据字典和质量监控看板，为后续大数据应用打了底。
+        </p>
+        <div class="wk-meta">数据建模 · ETL · 元数据管理 ／ 2022–2023</div>
+      </div>
+      <div class="work-card anim-card anim-delay-3" data-anim-card>
+        <div class="wk-cat">Side Project  ·  个人项目</div>
+        <h3>健身记录与饮食追踪小工具</h3>
+        <p>
+          为自己训练做的轻量级记录工具：记录每日训练组数、体脂变化、
+          饮食热量。后来给了几个一起健身的朋友用，反馈还不错。
+        </p>
+        <div class="wk-meta">Web App · 个人工具 ／ 2021 至今</div>
+      </div>
+      <div class="work-card anim-card anim-delay-4" data-anim-card>
+        <div class="wk-cat">Knowledge Sharing  ·  知识分享</div>
+        <h3>科技科内部技术分享</h3>
+        <p>
+          不定期在科内做技术分享，讲过 Python 入门、数据库优化、
+          Linux 常用排查思路。最受欢迎的一次是「帮非技术同事学会写 SQL」。
+        </p>
+        <div class="wk-meta">内部分享 · 技术文档 ／ 2019–至今</div>
+      </div>
+      <div class="work-card anim-card anim-delay-5" data-anim-card style="display:flex;align-items:center;justify-content:center;min-height:200px;">
+        <p style="font-family:var(--serif-cn);color:var(--ink-3);letter-spacing:.12em;margin:0;text-align:center;">
+          —— 更多内容等你来填 ——<br/>
+          <span style="font-size:13px;display:block;margin-top:10px;">这里是你做过的事情，你可以随时改</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hair" />
+
+<!-- ============================================================
+     TIMELINE — 履历与记忆
+     ============================================================ -->
+<section id="timeline">
+  <div class="container">
+    <div class="section-head anim-head" data-anim-head>
+      <h2><em>03</em><br/>履历与记忆</h2>
+      <p class="meta">
+        按时间整理的人生片段。<br/>
+        每个节点配一组照片堆 —— 鼠标悬停，照片会像翻开相册一样散开。
+      </p>
+    </div>
+    <div class="timeline" id="timelineRoot">
+      <!-- JS 注入 -->
+    </div>
+  </div>
+</section>
+
+<hr class="hair" />
+
+<!-- ============================================================
+     CONTACT
+     ============================================================ -->
+<section id="contact" class="contact">
+  <div class="container">
+    <span class="eyebrow anim-item" data-anim>04 ／ Contact  ·  联系方式</span>
+    <h2 class="anim-item anim-delay-1" data-anim>留个 <em>联系方式</em>，<br/>以后常联系。</h2>
+    <p class="closing anim-item anim-delay-2" data-anim>
+      如果我们是新认识的朋友，欢迎扫码加我微信；<br/>
+      如果是工作上的事，可以发邮件，标题里写清来意就好。<br/>
+      我不一定马上回，但一定会回。
+    </p>
+    <div class="contact-grid anim-item anim-delay-3" data-anim>
+      <div class="contact-cell">
+        <div class="k">WeChat ／ 微信</div>
+        <div class="v"><span class="placeholder">【待补：微信号 / 二维码】</span></div>
+        <div class="note">建议备注：姓名 + 认识场景</div>
+      </div>
+      <div class="contact-cell">
+        <div class="k">Email ／ 邮箱</div>
+        <div class="v"><span class="placeholder">【待补：邮箱地址】</span></div>
+        <div class="note">工作日 24 小时内回复</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div>© 2026  ·  <b>叶炳龙</b>  ·  YE BINGLONG</div>
+    <div>PBoC Jinhua Branch  ·  IT Division</div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     Timeline Data + Render
+     ============================================================ -->
+<script>
+const TIMELINE = [
+  {
+    year: '2024', suffix: 'LIFE',
+    stage: '结婚 · 人生的新章节',
+    desc: '与爱人完成婚礼。两个人的生活，正式成为一个家。',
+    cards: [
+      { type:'photo', src:'assets/photos/photo-2.jpg', alt:'婚纱照' },
+      { type:'placeholder', label:'图待补：婚礼当天' },
+      { type:'placeholder', label:'图待补：蜜月旅行' },
+    ]
+  },
+  {
+    year: '2023', suffix: 'WORK',
+    stage: '科技科 · 持续深耕',
+    desc: '参与本地金融业务系统的日常运维与小型项目开发，逐步接手更多数据治理相关工作。',
+    cards: [
+      { type:'placeholder', label:'图待补：工作现场' },
+      { type:'placeholder', label:'图待补：项目上线' },
+      { type:'placeholder', label:'图待补：同事合影' },
+    ]
+  },
+  {
+    year: '2020', suffix: 'BODY',
+    stage: '健身第七年 · 习惯成自然',
+    desc: '训练已经内化为日常。每周固定力量训练，饮食与作息也由此稳定下来。',
+    cards: [
+      { type:'photo', src:'assets/photos/photo-1.jpg', alt:'健身房自拍' },
+      { type:'placeholder', label:'图待补：训练记录' },
+      { type:'placeholder', label:'图待补：体态变化' },
+    ]
+  },
+  {
+    year: '2018', suffix: 'CAREER',
+    stage: '进入中国人民银行 · 金华市分行',
+    desc: '加入科技科，开始真正意义上的金融科技工作。',
+    cards: [
+      { type:'photo', src:'assets/photos/photo-3.jpg', alt:'白衬衫职业照' },
+      { type:'placeholder', label:'图待补：入职初期' },
+      { type:'placeholder', label:'图待补：办公环境' },
+    ]
+  },
+  {
+    year: '2017', suffix: 'START',
+    stage: '开始系统健身',
+    desc: '从一次偶然走进健身房开始，至今没停过。',
+    cards: [
+      { type:'placeholder', label:'图待补：训练初期' },
+      { type:'placeholder', label:'图待补：第一年记录' },
+      { type:'placeholder', label:'图待补：健身伙伴' },
+    ]
+  },
+  {
+    year: '— · —', suffix: 'EDU',
+    stage: '求学时期',
+    desc: '在校所学专业（具体院校 / 专业待补）。',
+    cards: [
+      { type:'placeholder', label:'图待补：校园时期' },
+      { type:'placeholder', label:'图待补：毕业' },
+      { type:'placeholder', label:'图待补：同学合影' },
+    ]
+  },
+];
+
+const root = document.getElementById('timelineRoot');
+TIMELINE.forEach((node, idx) => {
+  const item = document.createElement('div');
+  item.className = 't-item anim-timeline';
+  item.setAttribute('data-anim-timeline', '');
+  item.innerHTML =
+    '<div class="t-content">' +
+      '<h3 class="t-year">' + node.year + '<span class="suffix">/ ' + node.suffix + '</span></h3>' +
+      '<p class="t-stage">' + node.stage + '</p>' +
+      '<p class="t-desc">' + node.desc + '</p>' +
+      '<div class="t-stack" tabindex="0" aria-label="' + node.stage + ' 照片堆" data-stack>' +
+        node.cards.map(function(c, i) {
+          if (c.type === 'photo') {
+            return '<div class="t-card" data-i="' + i + '"><img src="' + c.src + '" alt="' + (c.alt || '') + '" loading="lazy" /></div>';
+          } else {
+            return '<div class="t-card placeholder" data-i="' + i + '"><span class="ph-label">' + c.label + '</span></div>';
+          }
+        }).join('') +
+      '</div>' +
+      '<div class="t-stack-meta">' + node.cards.length + ' frames  ·  hover to spread  ／  悬停摊开</div>' +
+    '</div>' +
+    '<div class="t-marker"><span></span></div>';
+  root.appendChild(item);
+});
+
+// 触屏点击展开/收起
+document.querySelectorAll('[data-stack]').forEach(function(stack) {
+  stack.addEventListener('click', function(e) {
+    if (window.matchMedia('(hover: none)').matches) {
+      stack.classList.toggle('is-open');
+    }
+  });
+});
+</script>
+
+<!-- ============================================================
+     Entrance Curtain + Scroll Animations
+     ============================================================ -->
+<script>
+(function() {
+  // 1. 帷幕开场
+  var curtain = document.getElementById('curtain');
+  if (!curtain) return;
+
+  // 显示文字
+  setTimeout(function() {
+    curtain.classList.add('show-text');
+  }, 200);
+
+  // 文字消失 + 帷幕滑开
+  setTimeout(function() {
+    curtain.classList.add('fade-text');
+  }, 1200);
+
+  setTimeout(function() {
+    curtain.classList.add('raised');
+    // 帷幕完全移除后释放滚动
+    setTimeout(function() {
+      curtain.style.display = 'none';
+      document.body.style.overflow = '';
+    }, 950);
+  }, 1600);
+
+  // 帷幕滑开后触发 hero 区入场
+  setTimeout(function() {
+    document.querySelectorAll('[data-anim]').forEach(function(el, i) {
+      el.classList.add('visible');
+    });
+  }, 1800);
+
+  // 2. 滚动入场：区段标题 + works 卡 + timeline 项
+  var headObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(en) {
+      if (en.isIntersecting) {
+        en.target.classList.add('visible');
+        headObserver.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  var cardObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(en) {
+      if (en.isIntersecting) {
+        en.target.classList.add('visible');
+        cardObserver.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+
+  var tlObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(en) {
+      if (en.isIntersecting) {
+        en.target.classList.add('visible');
+        tlObserver.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('[data-anim-head]').forEach(function(el) { headObserver.observe(el); });
+  document.querySelectorAll('[data-anim-card]').forEach(function(el) { cardObserver.observe(el); });
+  document.querySelectorAll('[data-anim-timeline]').forEach(function(el) { tlObserver.observe(el); });
+
+  // 3. 导航栏在帷幕期间也触发入场（帷幕结束后补触）
+  // Already handled above via setTimeout at 1800ms
+})();
+</script>
+
+</body>
+</html>
