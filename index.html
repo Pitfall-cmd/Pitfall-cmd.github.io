@@ -197,6 +197,7 @@ section { padding: clamp(100px, 13vh, 180px) 0; }
 #about    { background: var(--paper-warm); }
 #works    { background: var(--paper); }
 #timeline { background: var(--paper-earth); }
+#toys     { background: var(--paper); }
 #contact  { background: var(--paper-deep); }
 
 .section-head {
@@ -539,6 +540,24 @@ hr.hair {
   letter-spacing:.18em;
   color: var(--ink-3);
 }
+
+/* 可点击的小玩意卡片 */
+.toy-card { display:block; cursor:pointer; }
+.toy-card .toy-open {
+  margin-top:22px;
+  font-family: var(--mono);
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color: var(--warm-red);
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.toy-card .toy-open .arrow {
+  transition: transform var(--t-quick);
+}
+.toy-card:hover .toy-open .arrow { transform: translate(4px,-4px); }
 
 /* ============================================================
    TIMELINE — 重构：照片扇出不压文字
@@ -964,7 +983,8 @@ footer {
       <a href="#about"><span class="num">01</span>About</a>
       <a href="#works"><span class="num">02</span>Works</a>
       <a href="#timeline"><span class="num">03</span>Timeline</a>
-      <a href="#contact"><span class="num">04</span>Contact</a>
+      <a href="#toys"><span class="num">04</span>Toys</a>
+      <a href="#contact"><span class="num">05</span>Contact</a>
     </nav>
   </div>
 </header>
@@ -1157,11 +1177,54 @@ footer {
 <hr class="hair" />
 
 <!-- ============================================================
+     TOYS — 小玩意
+     ============================================================ -->
+<section id="toys">
+  <div class="container">
+    <div class="section-head anim-head" data-anim-head>
+      <h2><em>04</em><br/>小玩意</h2>
+      <p class="meta">
+        工作之外随手做的小东西，不为实用，只图有趣。<br/>
+        放在这里，留个纪念 —— 点开卡片即可把玩。
+      </p>
+    </div>
+    <div class="works-grid">
+      <a class="work-card toy-card anim-card" href="toys/fakecode.html" target="_blank" rel="noopener" data-anim-card>
+        <div class="wk-cat">For a Friend  ·  帮同学做的</div>
+        <h3>健康通行码 · 时钟版</h3>
+        <p>
+          帮浙江财经大学的同学做的超简版「健康通行码」页面：
+          蓝底白卡 + 实时跳动的日期与时钟，配一张背景图。纯玩具，图个乐。
+        </p>
+        <div class="toy-open">打开页面 <span class="arrow">↗</span></div>
+      </a>
+      <a class="work-card toy-card anim-card anim-delay-1" href="toys/fakecode2.html" target="_blank" rel="noopener" data-anim-card>
+        <div class="wk-cat">For a Friend  ·  帮同学做的</div>
+        <h3>健康通行码 · 另一版</h3>
+        <p>
+          同款的另一版本，换了张背景图。同样的实时时钟效果，
+          留作两版对照的纪念。
+        </p>
+        <div class="toy-open">打开页面 <span class="arrow">↗</span></div>
+      </a>
+      <div class="work-card anim-card anim-delay-2" data-anim-card style="display:flex;align-items:center;justify-content:center;min-height:200px;">
+        <p style="font-family:var(--serif-cn);color:var(--ink-3);letter-spacing:.12em;margin:0;text-align:center;">
+          —— 以后做的小玩意 ——<br/>
+          <span style="font-size:13px;display:block;margin-top:10px;">都会陆续收进这里</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hair" />
+
+<!-- ============================================================
      CONTACT
      ============================================================ -->
 <section id="contact" class="contact">
   <div class="container">
-    <span class="eyebrow anim-item" data-anim>04 ／ Contact  ·  联系方式</span>
+    <span class="eyebrow anim-item" data-anim>05 ／ Contact  ·  联系方式</span>
     <h2 class="anim-item anim-delay-1" data-anim>留个 <em>联系方式</em>，<br/>以后常联系。</h2>
     <p class="closing anim-item anim-delay-2" data-anim>
       如果我们是新认识的朋友，欢迎扫码加我微信；<br/>
