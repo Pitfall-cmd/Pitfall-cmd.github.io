@@ -275,22 +275,7 @@ hr.hair {
 }
 .anim-timeline.visible { opacity:1; transform: translateY(0); }
 
-/* 照片堆 hover 加了弹性 scale
-   规则：
-   - 左栏（奇数项）→ 照片向**右**扇出（不压文字）
-   - 右栏（偶数项）→ 照片向**左**扇出（不压文字）
-   - 底片（data-i=0，有真实照片）z-index 最高，始终在最上面可见 */
-@keyframes cardFanRight0 { to { transform:translate(120px, 22px)  rotate(14deg);  z-index:9; } }
-@keyframes cardFanRight1 { to { transform:translate(200px, 6px)   rotate(7deg);   z-index:8; } }
-@keyframes cardFanRight2 { to { transform:translate(270px,-4px)   rotate(1deg);   z-index:7; } }
-@keyframes cardFanRight3 { to { transform:translate(340px, 10px)  rotate(-6deg);  z-index:6; } }
-@keyframes cardFanRight4 { to { transform:translate(410px, 30px)  rotate(-14deg); z-index:5; } }
-
-@keyframes cardFanLeft0  { to { transform:translate(-120px, 22px) rotate(-14deg); z-index:9; } }
-@keyframes cardFanLeft1  { to { transform:translate(-200px, 6px)  rotate(-7deg);  z-index:8; } }
-@keyframes cardFanLeft2  { to { transform:translate(-270px,-4px)  rotate(-1deg);  z-index:7; } }
-@keyframes cardFanLeft3  { to { transform:translate(-340px, 10px) rotate(6deg);   z-index:6; } }
-@keyframes cardFanLeft4  { to { transform:translate(-410px, 30px) rotate(14deg);  z-index:5; } }
+/* 时间线照片画廊：见 .t-gallery / .t-photo（宝丽来相片 + 灯箱） */
 
 /* ============================================================
    HERO — 更大幅面
@@ -650,148 +635,153 @@ hr.hair {
 }
 .t-item:nth-child(even) .t-desc { margin-left:0; margin-right:auto; }
 
-/* —— 照片堆 —— */
-.t-stack {
-  margin-top: 32px;
-  display: inline-block;
-  position: relative;
-  width: 180px;
-  height: 135px;
-  perspective: 1200px;
+/* —— 照片画廊：散落的宝丽来相片，始终可见 —— */
+.t-gallery {
+  margin-top: 34px;
+  display: flex;
+  align-items: flex-start;
+  padding: 18px 6px;
 }
-.t-card {
-  position: absolute;
-  inset: 0;
-  background: var(--paper-warm);
+/* 左栏（奇数）照片靠右，右栏（偶数）靠左 */
+.t-item:nth-child(odd)  .t-gallery { justify-content: flex-end; }
+.t-item:nth-child(even) .t-gallery { justify-content: flex-start; }
+
+.t-photo {
+  position: relative;
+  flex: 0 0 auto;
+  width: 148px;
+  margin: 0;
+  padding: 9px 9px 30px;
+  background: #fff;
   border: 1px solid var(--rule);
-  box-shadow: 0 1px 0 var(--rule);
-  transform-origin: 50% 60%;
+  box-shadow: 0 8px 20px -10px rgba(60,25,15,.4);
+  transform-origin: center bottom;
   transition:
-    transform .6s cubic-bezier(.22,.82,.26,1.16),
+    transform .5s cubic-bezier(.22,.82,.26,1.16),
     box-shadow .4s ease;
   will-change: transform;
-  overflow: hidden;
+  z-index: 1;
 }
-.t-card img {
-  width:100%; height:100%;
-  object-fit:cover;
-  filter: saturate(.94) contrast(.97);
+/* 轻微重叠 + 交替旋转，营造散落感 */
+.t-photo:not(:first-child) { margin-left: -34px; }
+.t-photo:nth-child(4n+1) { transform: rotate(-5deg); }
+.t-photo:nth-child(4n+2) { transform: rotate(3deg);  }
+.t-photo:nth-child(4n+3) { transform: rotate(-2deg); }
+.t-photo:nth-child(4n)   { transform: rotate(4deg);  }
+
+/* 悬停/聚焦：抬起、放正、放大、置顶 */
+.t-photo:hover,
+.t-photo:focus-visible {
+  transform: rotate(0deg) translateY(-16px) scale(1.14);
+  box-shadow: 0 26px 46px -16px rgba(60,25,15,.5);
+  z-index: 20;
+  outline: none;
 }
-.t-card.placeholder {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:12px;
+
+.t-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  filter: saturate(.96) contrast(.98);
+  background: var(--paper-earth);
+}
+.t-photo.is-clickable { cursor: zoom-in; }
+
+.t-photo .cap {
+  position: absolute;
+  left: 9px; right: 9px; bottom: 9px;
+  text-align: center;
   font-family: var(--serif-cn);
-  font-size:12px;
-  color:var(--ink-3);
-  letter-spacing:.12em;
-  background:
-    repeating-linear-gradient(
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 占位相片 */
+.t-photo.placeholder { cursor: default; }
+.t-photo.placeholder .ph-box {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  font-family: var(--serif-cn);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  letter-spacing: .06em;
+  background: repeating-linear-gradient(
       135deg,
       var(--paper-warm) 0 8px,
       var(--paper-earth) 8px 16px
     );
 }
-.t-card.placeholder::before {
-  content:"";
-  position:absolute;
-  top:6px; left:6px;
-  width:18px; height:18px;
-  border:1px solid var(--ink-3);
-  opacity:.35;
-}
-.t-card.placeholder .ph-label {
-  position:relative;
-  background:var(--paper);
-  padding:4px 8px;
-  border:1px solid var(--rule);
-  line-height:1.5;
-}
-
-/* Stack 静止态 */
-.t-card[data-i="0"] { transform:translate(0,0)       rotate(0deg);  z-index:4; }
-.t-card[data-i="1"] { transform:translate(6px,5px)   rotate(2deg);  z-index:3; }
-.t-card[data-i="2"] { transform:translate(12px,10px) rotate(4deg);  z-index:2; }
-.t-card[data-i="3"] { transform:translate(18px,15px) rotate(6deg);  z-index:1; }
-.t-card[data-i="4"] { transform:translate(24px,20px) rotate(8deg);  z-index:0; opacity:.9; }
-
-/* —— 🔑 关键：左栏向左扇、右栏向右扇，绝不压文字 —— */
-
-/* 左栏（奇数项，文字在左）→ 照片向**右**扇出，不压文字 */
-.t-item:nth-child(odd) .t-stack:hover .t-card,
-.t-item:nth-child(odd) .t-stack:focus-within .t-card {
-  box-shadow: 0 8px 22px -12px rgba(60,25,15,.3);
-}
-.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="0"],
-.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="0"] {
-  animation: cardFanRight0 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="1"],
-.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="1"] {
-  animation: cardFanRight1 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="2"],
-.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="2"] {
-  animation: cardFanRight2 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="3"],
-.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="3"] {
-  animation: cardFanRight3 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(odd) .t-stack:hover .t-card[data-i="4"],
-.t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="4"] {
-  animation: cardFanRight4 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-
-/* 右栏（偶数项，文字在右）→ 照片向**左**扇出，不压文字 */
-.t-item:nth-child(even) .t-stack:hover .t-card,
-.t-item:nth-child(even) .t-stack:focus-within .t-card {
-  box-shadow: 0 8px 22px -12px rgba(60,25,15,.3);
-}
-.t-item:nth-child(even) .t-stack:hover .t-card[data-i="0"],
-.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="0"] {
-  animation: cardFanLeft0 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(even) .t-stack:hover .t-card[data-i="1"],
-.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="1"] {
-  animation: cardFanLeft1 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(even) .t-stack:hover .t-card[data-i="2"],
-.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="2"] {
-  animation: cardFanLeft2 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(even) .t-stack:hover .t-card[data-i="3"],
-.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="3"] {
-  animation: cardFanLeft3 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-.t-item:nth-child(even) .t-stack:hover .t-card[data-i="4"],
-.t-item:nth-child(even) .t-stack:focus-within .t-card[data-i="4"] {
-  animation: cardFanLeft4 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-}
-
-/* 触屏展开：同样方向规则 — 左栏向右、右栏向左 */
-.t-stack.is-open .t-card { box-shadow: 0 8px 22px -12px rgba(60,25,15,.3); }
-.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="0"] { animation: cardFanRight0 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="1"] { animation: cardFanRight1 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="2"] { animation: cardFanRight2 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="3"] { animation: cardFanRight3 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(odd) .t-stack.is-open .t-card[data-i="4"] { animation: cardFanRight4 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="0"] { animation: cardFanLeft0 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="1"] { animation: cardFanLeft1 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="2"] { animation: cardFanLeft2 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="3"] { animation: cardFanLeft3 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
-.t-item:nth-child(even) .t-stack.is-open .t-card[data-i="4"] { animation: cardFanLeft4 .6s cubic-bezier(.22,.82,.26,1.16) forwards; }
 
 .t-stack-meta {
-  margin-top: 16px;
+  margin-top: 18px;
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing:.22em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
+
+/* —— 照片灯箱 —— */
+.lightbox {
+  position: fixed; inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5vw;
+  background: rgba(28,21,18,.88);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+}
+.lightbox.open { opacity: 1; pointer-events: auto; }
+.lightbox figure {
+  margin: 0;
+  background: #fff;
+  padding: 14px 14px 44px;
+  box-shadow: 0 40px 90px -24px rgba(0,0,0,.7);
+  transform: scale(.9);
+  transition: transform .4s cubic-bezier(.22,.8,.26,1.15);
+  max-width: 90vw;
+}
+.lightbox.open figure { transform: scale(1); }
+.lightbox img {
+  display: block;
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+}
+.lightbox figcaption {
+  margin-top: 12px;
+  text-align: center;
+  font-family: var(--serif-cn);
+  font-size: 14px;
+  color: var(--ink-2);
+  letter-spacing: .05em;
+}
+.lightbox .lb-close {
+  position: absolute;
+  top: 24px; right: 30px;
+  font-family: var(--mono);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--paper);
+  opacity: .8;
+  cursor: pointer;
+  user-select: none;
+}
+.lightbox .lb-close:hover { opacity: 1; }
 
 /* ============================================================
    CONTACT
@@ -900,7 +890,7 @@ footer {
   .contact-cell { border-right:0; border-bottom:1px solid var(--rule); }
   .contact-cell:last-child { border-bottom:0; }
 
-  /* 移动端时间线：单列 + 照片扇出往右 */
+  /* 移动端时间线：单列 + 照片画廊靠左、允许横向滚动 */
   .timeline::before { left: 18px; }
   .t-item { grid-template-columns: 36px 1fr; }
   .t-marker { grid-column:1; padding-left:10px; justify-content:flex-start; }
@@ -913,46 +903,20 @@ footer {
   .t-desc,
   .t-item:nth-child(even) .t-desc { margin-left:0; margin-right:0; }
 
-  /* 移动端全部向右扇（单列布局，照片在文字下方） */
-  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="0"],
-  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="0"],
-  .t-stack:hover .t-card[data-i="0"],
-  .t-stack:focus-within .t-card[data-i="0"] {
-    animation: cardFanRight0 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
+  .t-item:nth-child(odd)  .t-gallery,
+  .t-item:nth-child(even) .t-gallery {
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 24px;
   }
-  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="1"],
-  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="1"],
-  .t-stack:hover .t-card[data-i="1"],
-  .t-stack:focus-within .t-card[data-i="1"] {
-    animation: cardFanRight1 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-  }
-  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="2"],
-  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="2"],
-  .t-stack:hover .t-card[data-i="2"],
-  .t-stack:focus-within .t-card[data-i="2"] {
-    animation: cardFanRight2 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-  }
-  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="3"],
-  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="3"],
-  .t-stack:hover .t-card[data-i="3"],
-  .t-stack:focus-within .t-card[data-i="3"] {
-    animation: cardFanRight3 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-  }
-  .t-item:nth-child(odd) .t-stack:hover .t-card[data-i="4"],
-  .t-item:nth-child(odd) .t-stack:focus-within .t-card[data-i="4"],
-  .t-stack:hover .t-card[data-i="4"],
-  .t-stack:focus-within .t-card[data-i="4"] {
-    animation: cardFanRight4 .6s cubic-bezier(.22,.82,.26,1.16) forwards;
-  }
-
-  .t-stack { width:150px; height:112px; }
   .footer-inner { flex-direction:column; gap:12px; }
 }
 @media (max-width: 520px) {
   .hero-credentials { flex-direction:column; gap:22px; }
   .hero-name-cn { font-size:56px; }
   .hero-quote { padding-left:20px; }
-  .t-stack { width:130px; height:98px; }
+  .t-photo { width: 126px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { transition:none!important; animation:none!important; }
@@ -1165,7 +1129,7 @@ footer {
       <h2><em>03</em><br/>履历与记忆</h2>
       <p class="meta">
         按时间整理的人生片段。<br/>
-        每个节点配一组照片堆 —— 鼠标悬停，照片会像翻开相册一样散开。
+        每个节点配一组照片 —— 鼠标悬停单张会抬起放大，点击可查看大图。
       </p>
     </div>
     <div class="timeline" id="timelineRoot">
@@ -1247,6 +1211,17 @@ footer {
 </section>
 
 </main>
+
+<!-- ============================================================
+     照片灯箱
+     ============================================================ -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="照片查看">
+  <span class="lb-close" aria-hidden="true">&times;</span>
+  <figure>
+    <img src="" alt="" />
+    <figcaption></figcaption>
+  </figure>
+</div>
 
 <footer>
   <div class="footer-inner">
@@ -1332,29 +1307,59 @@ TIMELINE.forEach((node, idx) => {
       '<h3 class="t-year">' + node.year + '<span class="suffix">/ ' + node.suffix + '</span></h3>' +
       '<p class="t-stage">' + node.stage + '</p>' +
       '<p class="t-desc">' + node.desc + '</p>' +
-      '<div class="t-stack" tabindex="0" aria-label="' + node.stage + ' 照片堆" data-stack>' +
-        node.cards.map(function(c, i) {
+      '<div class="t-gallery" aria-label="' + node.stage + ' 照片">' +
+        node.cards.map(function(c) {
           if (c.type === 'photo') {
-            return '<div class="t-card" data-i="' + i + '"><img src="' + c.src + '" alt="' + (c.alt || '') + '" loading="lazy" /></div>';
+            var cap = c.alt || '';
+            return '<figure class="t-photo is-clickable" tabindex="0" role="button" ' +
+                     'data-full="' + c.src + '" data-cap="' + cap + '" aria-label="查看大图：' + cap + '">' +
+                     '<img src="' + c.src + '" alt="' + cap + '" loading="lazy" />' +
+                     (cap ? '<figcaption class="cap">' + cap + '</figcaption>' : '') +
+                   '</figure>';
           } else {
-            return '<div class="t-card placeholder" data-i="' + i + '"><span class="ph-label">' + c.label + '</span></div>';
+            return '<figure class="t-photo placeholder"><div class="ph-box">' + c.label + '</div></figure>';
           }
         }).join('') +
       '</div>' +
-      '<div class="t-stack-meta">' + node.cards.length + ' frames  ·  hover to spread  ／  悬停摊开</div>' +
+      '<div class="t-stack-meta">' + node.cards.length + ' frames  ·  hover 抬起　click 看大图 ／ 悬停・点击</div>' +
     '</div>' +
     '<div class="t-marker"><span></span></div>';
   root.appendChild(item);
 });
 
-// 触屏点击展开/收起
-document.querySelectorAll('[data-stack]').forEach(function(stack) {
-  stack.addEventListener('click', function(e) {
-    if (window.matchMedia('(hover: none)').matches) {
-      stack.classList.toggle('is-open');
-    }
+// 照片灯箱：点击相片查看大图
+(function() {
+  var lb = document.getElementById('lightbox');
+  if (!lb) return;
+  var lbImg = lb.querySelector('img');
+  var lbCap = lb.querySelector('figcaption');
+
+  function open(src, cap) {
+    lbImg.src = src;
+    lbImg.alt = cap || '';
+    lbCap.textContent = cap || '';
+    lbCap.style.display = cap ? '' : 'none';
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.t-photo.is-clickable').forEach(function(ph) {
+    var handler = function() { open(ph.getAttribute('data-full'), ph.getAttribute('data-cap')); };
+    ph.addEventListener('click', handler);
+    ph.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
+    });
   });
-});
+
+  lb.addEventListener('click', close);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') close();
+  });
+})();
 </script>
 
 <!-- ============================================================
